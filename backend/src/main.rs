@@ -1,24 +1,32 @@
-mod model;
-mod handler;
+mod email_template;
 mod error;
+mod handler;
+mod model;
+mod state;
+mod utils;
 
-use axum::{Router, serve};
+use axum::{Router, routing::post, serve};
 use dotenv::dotenv;
-use http::{Method, header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE}};
-use model::AppState;
+use http::{
+    Method,
+    header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
+};
 use tokio::net::TcpListener;
 use tower_http::cors::CorsLayer;
 
-use crate::handler::health_checker;
+use crate::handler::{login_user, register_user};
 
 #[tokio::main]
 async fn main() {
     dotenv().ok();
 
-    let db = AppState::init();
-
+    let state = state::AppState::new().await;
     let cors = CorsLayer::new()
-        .allow_origin("http://localhost:3000".parse::<http::HeaderValue>().unwrap())
+        .allow_origin(
+            "http://localhost:5173"
+                .parse::<http::HeaderValue>()
+                .unwrap(),
+        )
         .allow_methods([Method::GET, Method::POST])
         .allow_headers([CONTENT_TYPE, AUTHORIZATION, ACCEPT])
         .allow_credentials(true);
@@ -26,30 +34,11 @@ async fn main() {
     println!("🚀 Server started successfully");
 
     let app = Router::new()
-        .route("/healthchecker", health_checker)
-        .with_state(db);
+        .route("/users/register", post(register_user))
+        .route("/users/login", post(login_user))
+        .with_state(state)
+        .layer(cors);
 
     let listener = TcpListener::bind("0.0.0.0:3000").await.unwrap();
     serve(listener, app).await.unwrap();
-
-    // HttpServer::new(move || {
-    //     let cors = Cors::default()
-    //         .allowed_origin("http://localhost:3000")
-    //         .allowed_methods(vec!["GET", "POST"])
-    //         .allowed_headers(vec![
-    //             header::CONTENT_TYPE,
-    //             header::AUTHORIZATION,
-    //             header::ACCEPT,
-    //         ])
-    //         .supports_credentials();
-    //     App::new()
-    //         .app_data(app_data.clone())
-    //         .service(actix_files::Files::new("/api/images", &public_dir))
-    //         .configure(handler::config)
-    //         .wrap(cors)
-    //         .wrap(Logger::default())
-    // })
-    // .bind(("127.0.0.1", 8000))?
-    // .run()
-    // .await
 }

@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn, validateEmail } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Field,
@@ -11,33 +11,11 @@ import { Input } from "@/components/ui/input";
 import { Link } from "react-router";
 import { useState } from "react";
 import { CheckCircle2, CircleX } from "lucide-react";
-import { Checkbox } from "@/components//ui/checkbox";
-import { Label } from "@/components//ui/label";
-
-const PASSWORD_RULES = [
-  {
-    label: "Panjang 8–20 karakter",
-    test: (pw: string) => pw.length >= 8 && pw.length <= 20,
-  },
-  {
-    label: "Mengandung huruf besar (A–Z) dan kecil (a–z)",
-    test: (pw: string) => /[A-Z]/.test(pw) && /[a-z]/.test(pw),
-  },
-  {
-    label: "Mengandung minimal 1 angka atau simbol",
-    test: (pw: string) => /[0-9]/.test(pw) || /[^A-Za-z0-9]/.test(pw),
-  },
-];
-
-function validateEmail(email: string) {
-  const value = email.trim();
-
-  if (!value) return false;
-  if (value.length > 254) return false;
-  if (value.includes(" ")) return false;
-
-  return /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(value);
-}
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { registerUser } from "@/lib/api";
+import { SuccessDialog } from "../dialog/dialog-success";
+import { PASSWORD_RULES } from "@/lib/constants_password";
 
 export default function RegisterForm({
   className,
@@ -49,7 +27,11 @@ export default function RegisterForm({
     confirmPassword: "",
   });
 
-  const [showPassword, setShowPassword] = useState("password");
+  const [showPassword, setShowPassword] = useState<"password" | "text">(
+    "password",
+  );
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState("");
 
   const passwordChecks = PASSWORD_RULES.map((rule) => ({
     ...rule,
@@ -63,12 +45,19 @@ export default function RegisterForm({
 
   const isFormValid = isEmailValid && isPasswordValid && isConfirmValid;
 
-  function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!isFormValid) return;
 
-    // TODO: panggil API register di sini
-    console.log("submit", form);
+    try {
+      setError("");
+      await registerUser(form.email, form.password);
+      setOpen(true);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      }
+    }
   }
 
   return (
@@ -78,7 +67,7 @@ export default function RegisterForm({
           <div className="flex flex-col items-center gap-2 text-center">
             <h1 className="text-xl font-bold">Create your account</h1>
             <FieldDescription>
-              Don&apos;t have an account? <Link to="/">Sign in</Link>
+              Already have an account? <Link to="/">Sign in</Link>
             </FieldDescription>
           </div>
 
@@ -95,7 +84,7 @@ export default function RegisterForm({
             </Button>
           </Field>
 
-          <FieldSeparator></FieldSeparator>
+          <FieldSeparator />
 
           <Field>
             <FieldLabel htmlFor="email">Email</FieldLabel>
@@ -104,20 +93,30 @@ export default function RegisterForm({
               type="email"
               placeholder="m@example.com"
               value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              onChange={(e) => {
+                setForm({ ...form, email: e.target.value });
+                setError("");
+              }}
             />
             <div
               className={cn(
                 "grid transition-[grid-template-rows,opacity] duration-300 ease-in-out",
-                form.email && !isEmailValid
+                (form.email && !isEmailValid) || error
                   ? "grid-rows-[1fr] opacity-100"
                   : "grid-rows-[0fr] opacity-0",
               )}
             >
               <div className="overflow-hidden">
-                <FieldDescription className="text-destructive">
-                  Email is not valid
-                </FieldDescription>
+                {!isEmailValid && form.email && (
+                  <FieldDescription className="text-destructive">
+                    Email is not valid
+                  </FieldDescription>
+                )}
+                {error && (
+                  <FieldDescription className="text-destructive">
+                    {error}
+                  </FieldDescription>
+                )}
               </div>
             </div>
           </Field>
@@ -133,7 +132,26 @@ export default function RegisterForm({
           </Field>
 
           <Field>
-            <FieldLabel htmlFor="confirm-password">Confirm Password</FieldLabel>
+            <div className="flex items-center justify-between gap-3">
+              <FieldLabel htmlFor="confirm-password">
+                Confirm Password
+              </FieldLabel>
+              <div className="text-xs shrink-0">
+                <Field orientation="horizontal">
+                  <Checkbox
+                    id="show-password-checkbox"
+                    className="size-3.5"
+                    checked={showPassword === "text"}
+                    onCheckedChange={(checked) =>
+                      setShowPassword(checked === true ? "text" : "password")
+                    }
+                  />
+                  <Label htmlFor="show-password-checkbox" className="-ml-1">
+                    Show password
+                  </Label>
+                </Field>
+              </div>
+            </div>
             <Input
               id="confirm-password"
               type={showPassword}
@@ -142,43 +160,26 @@ export default function RegisterForm({
                 setForm({ ...form, confirmPassword: e.target.value })
               }
             />
-            <div className="flex justify-between">
-              <div
-                className={cn(
-                  "grid transition-[grid-template-rows,opacity] duration-300 ease-in-out",
-                  form.confirmPassword && !isConfirmValid
-                    ? "grid-rows-[1fr] opacity-100"
-                    : "grid-rows-[0fr] opacity-0",
-                )}
-              >
-                <div className="overflow-hidden">
-                  <FieldDescription className="text-destructive">
-                    Confirm password does not match
-                  </FieldDescription>
-                </div>
-              </div>
-              <div className="mb-2 text-xs">
-                <Field orientation="horizontal">
-                  <Checkbox
-                    id="terms-checkbox"
-                    className="size-3.5"
-                    onClick={() =>
-                      setShowPassword(
-                        showPassword === "password" ? "text" : "password",
-                      )
-                    }
-                  />
-                  <Label htmlFor="terms-checkbox" className="-ml-1">
-                    Show password
-                  </Label>
-                </Field>
+            <div
+              className={cn(
+                "grid transition-[grid-template-rows,opacity] duration-300 ease-in-out",
+                form.confirmPassword && !isConfirmValid
+                  ? "grid-rows-[1fr] opacity-100"
+                  : "grid-rows-[0fr] opacity-0",
+              )}
+            >
+              <div className="overflow-hidden">
+                <FieldDescription className="text-destructive mb-2">
+                  Confirm password does not match
+                </FieldDescription>
               </div>
             </div>
           </Field>
-          <FieldDescription>
-            <ul className="space-y-1 text-xs -mt-4">
+          <FieldDescription >
+            <ul className="space-y-1 sm:text-xs text-[11px] -mt-4">
               {passwordChecks.map((rule) => (
                 <li
+                  key={rule.label}
                   className={cn(
                     "flex items-center gap-1.5 transition-colors duration-300",
                     rule.passed ? "text-green-600" : "text-muted-foreground",
@@ -192,8 +193,7 @@ export default function RegisterForm({
                           ? "opacity-100 scale-100"
                           : "opacity-0 scale-75",
                       )}
-                    />
-
+                    />{" "}
                     <CircleX
                       className={cn(
                         "absolute inset-0 h-3 w-3 transition-all duration-300",
@@ -202,8 +202,7 @@ export default function RegisterForm({
                           : "opacity-100 scale-100",
                       )}
                     />
-                  </span>
-
+                  </span>{" "}
                   <span>{rule.label}</span>
                 </li>
               ))}
@@ -217,6 +216,8 @@ export default function RegisterForm({
           </Field>
         </FieldGroup>
       </form>
+
+      <SuccessDialog open={open} onOpenChange={setOpen} email={form.email} />
     </div>
   );
 }
