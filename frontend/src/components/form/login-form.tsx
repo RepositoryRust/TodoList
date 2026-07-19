@@ -43,7 +43,11 @@ export default function LoginForm({
       <form onSubmit={handleSubmit} noValidate>
         <FieldGroup>
           <div className="flex flex-col items-center gap-2 text-center">
-            <img src="/assets/todolist.svg" alt="Logo" className="h-20 w-20" />
+            <img
+              src="/assets/todolist-large.svg"
+              alt="Logo"
+              className="h-20 w-20"
+            />
             <h1 className="text-xl font-bold">Login to your account</h1>
             <FieldDescription>
               Don&apos;t have an account? <Link to="/register">Sign up</Link>
@@ -118,7 +122,9 @@ export default function LoginForm({
             </div>
           </Field>
           <Field>
-            <Button type="submit" disabled={!isEmailValid}>Login</Button>
+            <Button type="submit" disabled={!isEmailValid}>
+              Login
+            </Button>
           </Field>
           <FieldSeparator></FieldSeparator>
           <Field className="grid gap-4 grid-cols-2">

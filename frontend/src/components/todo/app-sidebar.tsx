@@ -49,7 +49,7 @@ export function AppSidebar({
           <SidebarMenuItem>
             <div className="flex items-center p-1.5">
               <img
-                src="assets/todolist.svg"
+                src="/assets/todolist-large.svg"
                 className="h-8 w-8 group-data-[collapsible=icon]:hidden"
                 alt="TodoList"
               />
