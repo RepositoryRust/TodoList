@@ -22,7 +22,7 @@ const data = {
   user: {
     name: "shadcn",
     email: "m@example.com",
-    avatar: "/assets/todolist.svg",
+    avatar: "/assets/main.svg",
   },
 };
 
