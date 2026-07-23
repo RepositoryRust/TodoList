@@ -6,13 +6,12 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TodoList } from "@/components/todo/todo-list";
 import { TODO_VIEWS } from "@/lib/todo-constants";
 import { useAuth } from "@/context/auth-context";
-import SkeletonTodo from "@/components/todo/skeleton";
 import { useTitle } from "@/lib/utils";
 
 export default function TodolistPage() {
   useTitle("TodoList");
-  
-  const { user, loading } = useAuth();
+
+  const { user } = useAuth();
   const [selectedItem, setSelectedItem] = useState<{
     title: string;
     icon?: Icon;
@@ -22,10 +21,6 @@ export default function TodolistPage() {
   });
 
   const currentView = selectedItem ? TODO_VIEWS[selectedItem.title] : undefined;
-
-  if (loading) {
-    return <SkeletonTodo />;
-  }
 
   return (
     <SidebarProvider

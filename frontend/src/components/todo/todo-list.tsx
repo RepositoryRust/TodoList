@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useRef, useState, type SyntheticEvent } from "react";
 import {
   IconCheck,

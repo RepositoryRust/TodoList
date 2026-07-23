@@ -9,8 +9,8 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router";
-import { useState } from "react";
-import { CheckCircle2, CircleX } from "lucide-react";
+import { useEffect, useState } from "react";
+import { CheckCircle2, CircleX, Loader2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { registerUser } from "@/lib/api";
@@ -27,23 +27,40 @@ export default function RegisterForm({
     confirmPassword: "",
   });
 
-  const [showPassword, setShowPassword] = useState<"password" | "text">(
-    "password",
-  );
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const passwordChecks = PASSWORD_RULES.map((rule) => ({
     ...rule,
     passed: rule.test(form.password),
   }));
+  const [showPassword, setShowPassword] = useState<"password" | "text">(
+    "password",
+  );
 
   const isEmailValid = validateEmail(form.email);
+  const emailError =
+    error || (form.email && !isEmailValid ? "Email is not valid" : "");
+  const [visibleEmailError, setVisibleEmailError] = useState(emailError);
+
   const isPasswordValid = passwordChecks.every((c) => c.passed);
   const isConfirmValid =
     form.confirmPassword.length > 0 && form.confirmPassword === form.password;
 
   const isFormValid = isEmailValid && isPasswordValid && isConfirmValid;
+  const showEmailError = Boolean(emailError);
+
+  useEffect(() => {
+    if (emailError) {
+      setVisibleEmailError(emailError);
+      return;
+    }
+
+    const timeout = window.setTimeout(() => setVisibleEmailError(""), 300);
+
+    return () => window.clearTimeout(timeout);
+  }, [emailError]);
 
   async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -51,12 +68,15 @@ export default function RegisterForm({
 
     try {
       setError("");
+      setLoading(true);
       await registerUser(form.email, form.password);
       setOpen(true);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
       }
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -67,7 +87,7 @@ export default function RegisterForm({
           <div className="flex flex-col items-center gap-2 text-center">
             <h1 className="text-xl font-bold">Create your account</h1>
             <FieldDescription>
-              Already have an account? <Link to="/">Sign in</Link>
+              Already have an account? <Link to="/login">Sign in</Link>
             </FieldDescription>
           </div>
 
@@ -101,20 +121,15 @@ export default function RegisterForm({
             <div
               className={cn(
                 "grid transition-[grid-template-rows,opacity] duration-300 ease-in-out",
-                (form.email && !isEmailValid) || error
+                showEmailError
                   ? "grid-rows-[1fr] opacity-100"
                   : "grid-rows-[0fr] opacity-0",
               )}
             >
               <div className="overflow-hidden">
-                {!isEmailValid && form.email && (
+                {visibleEmailError && (
                   <FieldDescription className="text-destructive">
-                    Email is not valid
-                  </FieldDescription>
-                )}
-                {error && (
-                  <FieldDescription className="text-destructive">
-                    {error}
+                    {visibleEmailError}
                   </FieldDescription>
                 )}
               </div>
@@ -175,7 +190,7 @@ export default function RegisterForm({
               </div>
             </div>
           </Field>
-          <FieldDescription >
+          <FieldDescription>
             <ul className="space-y-1 sm:text-xs text-[11px] -mt-4">
               {passwordChecks.map((rule) => (
                 <li
@@ -210,8 +225,15 @@ export default function RegisterForm({
           </FieldDescription>
 
           <Field>
-            <Button type="submit" disabled={!isFormValid}>
-              Register
+            <Button type="submit" disabled={!isFormValid || loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="animate-spin" />
+                  Registering...
+                </>
+              ) : (
+                "Register"
+              )}
             </Button>
           </Field>
         </FieldGroup>

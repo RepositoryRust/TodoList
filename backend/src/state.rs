@@ -1,4 +1,4 @@
-use resend_rs::{Resend};
+use resend_rs::Resend;
 use sqlx::{MySql, Pool, mysql::MySqlPoolOptions};
 
 #[derive(Clone)]
@@ -6,7 +6,7 @@ pub struct AppState {
     pub pool: Pool<MySql>,
     pub resend: Resend,
     pub jwt_secret_access: String,
-    pub jwt_secret_refresh: String
+    pub jwt_secret_refresh: String,
 }
 
 impl AppState {
@@ -24,6 +24,11 @@ impl AppState {
 
         let resend = Resend::new(&resend_api_key);
 
-        AppState { pool, resend, jwt_secret_access, jwt_secret_refresh }
+        AppState {
+            pool,
+            resend,
+            jwt_secret_access,
+            jwt_secret_refresh,
+        }
     }
 }

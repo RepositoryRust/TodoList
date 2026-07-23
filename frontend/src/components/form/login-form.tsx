@@ -10,9 +10,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router";
 import { useAuth } from "@/context/auth-context";
-import { useState, type SyntheticEvent } from "react";
+import { useEffect, useState, type SyntheticEvent } from "react";
 import { Checkbox } from "../ui/checkbox";
 import { Label } from "../ui/label";
+import { Loader2 } from "lucide-react";
 
 export default function LoginForm({
   className,
@@ -25,17 +26,45 @@ export default function LoginForm({
     "password",
   );
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const isEmailValid = validateEmail(email);
+  const emailError = email && !isEmailValid ? "Email is not valid" : "";
+  const showResendVerification =
+    error === "Please verify your email first" && isEmailValid;
+  const [visibleEmailError, setVisibleEmailError] = useState(emailError);
+  const [visibleError, setVisibleError] = useState(error);
+
+  useEffect(() => {
+    if (emailError) {
+      setVisibleEmailError(emailError);
+      return;
+    }
+    const timeout = window.setTimeout(() => setVisibleEmailError(""), 300);
+    return () => window.clearTimeout(timeout);
+  }, [emailError]);
+
+  useEffect(() => {
+    if (error) {
+      setVisibleError(error);
+      return;
+    }
+    const timeout = window.setTimeout(() => setVisibleError(""), 300);
+    return () => window.clearTimeout(timeout);
+  }, [error]);
 
   async function handleSubmit(e: SyntheticEvent) {
     e.preventDefault();
     try {
+      setError("");
+      setLoading(true);
       await login(email, password);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
       }
+    } finally {
+      setLoading(false);
     }
   }
   return (
@@ -60,22 +89,25 @@ export default function LoginForm({
               type="email"
               placeholder="m@example.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setError("");
+              }}
             />
-            <div className="flex justify-between">
-              <div
-                className={cn(
-                  "grid transition-[grid-template-rows,opacity] duration-300 ease-in-out",
-                  email && !isEmailValid
-                    ? "grid-rows-[1fr] opacity-100"
-                    : "grid-rows-[0fr] opacity-0",
-                )}
-              >
-                <div className="overflow-hidden">
+            <div
+              className={cn(
+                "grid transition-[grid-template-rows,opacity] duration-300 ease-in-out",
+                Boolean(emailError)
+                  ? "grid-rows-[1fr] opacity-100"
+                  : "grid-rows-[0fr] opacity-0",
+              )}
+            >
+              <div className="overflow-hidden">
+                {visibleEmailError && (
                   <FieldDescription className="text-destructive">
-                    Email is not valid
+                    {visibleEmailError}
                   </FieldDescription>
-                </div>
+                )}
               </div>
             </div>
           </Field>
@@ -102,28 +134,50 @@ export default function LoginForm({
               id="password"
               type={showPassword}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError("");
+              }}
             />
             <div
               className={cn(
                 "grid transition-[grid-template-rows,opacity] duration-300 ease-in-out",
-                error
+                Boolean(error)
                   ? "grid-rows-[1fr] opacity-100"
                   : "grid-rows-[0fr] opacity-0",
               )}
             >
               <div className="overflow-hidden">
-                {error && (
-                  <FieldDescription className="text-destructive">
-                    {error}
-                  </FieldDescription>
+                {visibleError && (
+                  <div className="space-y-1">
+                    <FieldDescription className="text-destructive">
+                      {visibleError}
+                    </FieldDescription>
+                    {showResendVerification && (
+                      <FieldDescription>
+                        Didn&apos;t receive the email?{" "}
+                        <Link
+                          to={`/resend-verification?email=${encodeURIComponent(email)}`}
+                        >
+                          Resend verification link
+                        </Link>
+                      </FieldDescription>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
           </Field>
           <Field>
-            <Button type="submit" disabled={!isEmailValid}>
-              Login
+            <Button type="submit" disabled={!isEmailValid || loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="animate-spin" />
+                  Logging in...
+                </>
+              ) : (
+                "Login"
+              )}
             </Button>
           </Field>
           <FieldSeparator></FieldSeparator>

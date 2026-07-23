@@ -10,10 +10,11 @@ CREATE TABLE users (
 );
 
 CREATE TABLE email_verifications (
-    id          CHAR(36)     NOT NULL PRIMARY KEY,
-    user_id     CHAR(36)     NOT NULL,
-    token  CHAR(64)     NOT NULL,
-    expires_at  DATETIME     NOT NULL,
-    created_at  DATETIME     DEFAULT CURRENT_TIMESTAMP,
+    id          CHAR(36)      NOT NULL PRIMARY KEY,
+    user_id     CHAR(36)      NOT NULL,
+    token       CHAR(64)      NOT NULL,
+    used_at     DATETIME      DEFAULT NULL,
+    expires_at  DATETIME      NOT NULL,
+    created_at  DATETIME      DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );

@@ -6,6 +6,8 @@ import {
   IconUserCircle,
 } from "@tabler/icons-react";
 
+import { useNavigate } from "react-router";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -22,6 +24,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useAuth } from "@/context/auth-context";
 
 export function NavUser({
   user,
@@ -33,6 +36,16 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  async function handleLogout() {
+    try {
+      await logout();
+    } finally {
+      navigate("/", { replace: true });
+    }
+  }
 
   return (
     <SidebarMenu>
@@ -40,20 +53,23 @@ export function NavUser({
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
-              <SidebarMenuButton size="lg">
-                <Avatar className="h-9 w-9 rounded-lg grayscale">
+              <SidebarMenuButton
+                size="lg"
+                className="duration-200 ease-linear group-data-[collapsible=icon]:size-10! group-data-[collapsible=icon]:p-0!"
+              >
+                <Avatar className="h-9 w-9 shrink-0 rounded-lg grayscale">
                   <AvatarImage src={user.avatar} alt={user.name} />
                   <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                 </Avatar>
 
-                <div className="grid flex-1 text-left text-[15px] leading-tight">
+                <div className="grid max-w-40 flex-1 overflow-hidden text-left text-[15px] leading-tight transition-[max-width,opacity] duration-200 ease-linear group-data-[collapsible=icon]:max-w-0 group-data-[collapsible=icon]:opacity-0">
                   <span className="truncate font-medium">{user.name}</span>
                   <span className="truncate text-[13px] text-muted-foreground">
                     {user.email}
                   </span>
                 </div>
 
-                <IconDotsVertical className="ml-auto size-5" />
+                <IconDotsVertical className="ml-auto size-5 transition-[width,height,margin,opacity] duration-200 ease-linear group-data-[collapsible=icon]:ml-0 group-data-[collapsible=icon]:size-0! group-data-[collapsible=icon]:opacity-0" />
               </SidebarMenuButton>
             }
           />
@@ -86,7 +102,7 @@ export function NavUser({
                 Account
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>
                 <IconLogout />
                 Log out
               </DropdownMenuItem>

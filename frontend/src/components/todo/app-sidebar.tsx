@@ -18,14 +18,6 @@ import {
 import type { User } from "@/types/types-user";
 import { NavLogin } from "./nav-login";
 
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/assets/main.svg",
-  },
-};
-
 export function AppSidebar({
   onSelectItem,
   className,
@@ -37,6 +29,7 @@ export function AppSidebar({
 }) {
   const [activeItem, setActiveItem] = useState("Task");
   const { isMobile, setOpenMobile } = useSidebar();
+  const userName = user?.email.split("@")[0] ?? "User";
 
   return (
     <Sidebar
@@ -44,23 +37,24 @@ export function AppSidebar({
       className={cn("overflow-hidden overscroll-none", className)}
       {...props}
     >
-      <SidebarHeader className="shrink-0 overflow-hidden overscroll-none">
+      <SidebarHeader className="shrink-0 overflow-hidden overscroll-none transition-[padding] duration-200 ease-linear group-data-[collapsible=icon]:p-1">
         <SidebarMenu>
           <SidebarMenuItem>
-            <div className="flex items-center p-1.5">
+            <div className="flex items-center p-1.5 transition-[padding] duration-200 ease-linear group-data-[collapsible=icon]:p-0">
               <img
                 src="/assets/todolist-large.svg"
-                className="h-8 w-8 group-data-[collapsible=icon]:hidden"
+                className="h-8 w-8 shrink-0 transition-[width,opacity] duration-200 ease-linear group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0"
                 alt="TodoList"
               />
-              <span className="ml-2 font-semibold group-data-[collapsible=icon]:hidden">
+              <span className="ml-2 max-w-32 overflow-hidden whitespace-nowrap font-semibold transition-[max-width,opacity,margin] duration-200 ease-linear group-data-[collapsible=icon]:ml-0 group-data-[collapsible=icon]:max-w-0 group-data-[collapsible=icon]:opacity-0">
                 TodoList
               </span>
               <SidebarTrigger
                 className="
-                  size-8
+                  -mt-1.5
+                  size-10
                   ml-auto
-                  group-data-[collapsible=icon]:-ml-1.5
+                  group-data-[collapsible=icon]:mt-1.5
                 "
               />
             </div>
@@ -81,8 +75,18 @@ export function AppSidebar({
           }}
         />
       </SidebarContent>
-      <SidebarFooter className="overflow-hidden overscroll-none">
-        {user ? <NavUser user={data.user} /> : <NavLogin />}
+      <SidebarFooter className="overflow-hidden overscroll-none transition-[padding] duration-200 ease-linear group-data-[collapsible=icon]:p-1">
+        {user ? (
+          <NavUser
+            user={{
+              name: userName,
+              email: user.email,
+              avatar: "/assets/main.svg",
+            }}
+          />
+        ) : (
+          <NavLogin />
+        )}
       </SidebarFooter>
     </Sidebar>
   );

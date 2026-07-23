@@ -1,0 +1,3 @@
+DROP INDEX email_verifications_user_status_idx ON email_verifications;
+
+DROP INDEX email_verifications_token_unique ON email_verifications;
